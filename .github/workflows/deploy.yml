@@ -1,0 +1,36 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '16.15.0'
+      - name: Git Authentication
+        env:
+          email: ${{ secrets.GH_EMAIL }}
+          username: ${{ secrets.GH_USERNAME }}
+          access_token: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global credential.helper store
+          echo "https://${access_token}:x-oauth-basic@github.com" > ~/.git-credentials
+          git config --global user.email $email
+          git config --global user.name $username
+      - name: Deploy to GitHub Pages
+        run: |
+          yarn
+          yarn build
+          cd dist
+          git init
+          git branch -M main
+          git remote add origin https://github.com/LucasVmigotto/hello-lucas-prod.git
+          git add -A
+          git commit -m "Deploy ID: ${GITHUB_RUN_ID}"
+          git push -f origin main
